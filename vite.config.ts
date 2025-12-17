@@ -3,12 +3,19 @@ import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
-// إعداد قياسي للباندلنغ ودعم alias @ إلى مجلد src
+// إعداد Vite للنشر على GitHub Pages
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
+
+  // مهم جدًا لـ GitHub Pages
+  base: '/hadi_group/',
+
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(__dirname, 'src'),
     },
   },
 })
