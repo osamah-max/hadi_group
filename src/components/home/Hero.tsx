@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { companyRoutes, getCompanyRoute } from '../../constants/companyRoutes';
 
 type Company = { name: string; to: string; logo?: string };
 
@@ -31,6 +32,37 @@ export default function Hero({
   const alignText = isRTL ? 'text-right' : 'text-left';
   const flexDirection = isRTL ? 'flex-row-reverse' : 'flex-row';
   const justifyContent = isRTL ? 'justify-end' : 'justify-start';
+
+  // Normalize company paths to ensure they match App.tsx routes exactly
+  const normalizedCompanies = companies.map((company) => {
+    // Extract slug from path (handles "/companies/hima", "companies/hima", "/hima", "hima")
+    let slug = company.to
+      .replace(/^\/companies\//, '')  // Remove leading /companies/
+      .replace(/^companies\//, '')    // Remove leading companies/
+      .replace(/^\//, '')              // Remove any leading /
+      .trim();
+    
+    // Get the canonical route from our single source of truth
+    const canonicalRoute = getCompanyRoute(slug);
+    
+    // Debug logging (temporary)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Hero] Company: ${company.name}, Original: ${company.to}, Slug: ${slug}, Normalized: ${canonicalRoute}`);
+    }
+    
+    return {
+      ...company,
+      to: canonicalRoute, // Use canonical route
+    };
+  });
+
+  // Handler for company card clicks with debug logging
+  const handleCompanyClick = (company: Company) => {
+    // company.to is already normalized at this point, but log for verification
+    // Debug logging (temporary)
+    console.log("Navigating to:", company.to);
+    console.log("Full URL will be:", `#${company.to}`);
+  };
 
   return (
     <section
@@ -126,10 +158,11 @@ export default function Hero({
             {/* Company Cards - Full Width Grid on Mobile/Tablet */}
             <div ref={cardsRef} className="w-full">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                {companies.map((company, index) => (
+                {normalizedCompanies.map((company, index) => (
                   <Link
                     key={company.to}
                     to={company.to}
+                    onClick={() => handleCompanyClick(company)}
                     className="company-card group relative flex h-48 md:h-56 flex-col overflow-hidden rounded-2xl md:rounded-3xl border border-emerald-100/80 bg-white shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-600/20 animate-fadeInUp"
                     style={{ animationDelay: `${index * 0.1}s` }}
                     aria-label={`${isAR ? 'زيارة' : 'Visit'} ${company.name}`}
@@ -226,10 +259,11 @@ export default function Hero({
             {/* Right Column (Company Cards) - Order changes based on RTL */}
             <div ref={cardsRef} className={isRTL ? 'lg:order-1' : 'lg:order-2'}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {companies.map((company, index) => (
+                {normalizedCompanies.map((company, index) => (
                   <Link
                     key={company.to}
                     to={company.to}
+                    onClick={() => handleCompanyClick(company)}
                     className="company-card group relative flex h-56 flex-col overflow-hidden rounded-3xl border border-emerald-100/80 bg-white shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-600/20 animate-fadeInUp"
                     style={{ animationDelay: `${index * 0.1}s` }}
                     aria-label={`${isAR ? 'زيارة' : 'Visit'} ${company.name}`}
