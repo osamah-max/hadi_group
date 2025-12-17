@@ -1,5 +1,5 @@
 // src/App.tsx
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import SiteLayout from "./layouts/SiteLayout";
 
 // pages
@@ -19,25 +19,26 @@ import Sina from "./pages/companies/sina";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* كل صفحات الموقع تمر عبر نفس ال-layout */}
-        <Route element={<SiteLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/companies" element={<Companies />} />
+    <Routes>
+      {/* كل صفحات الموقع تمر عبر نفس ال-layout */}
+      <Route element={<SiteLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/companies" element={<Companies />} />
 
-          {/* شركات المجموعة */}
-          <Route path="/companies/alzab" element={<Alzab />} />
-          <Route path="/companies/gayath" element={<Gayath />} />
-          <Route path="/companies/hadi_cap" element={<HadiCap />} />
-          <Route path="/companies/hamdi" element={<Hamdi />} />
-          <Route path="/companies/hima" element={<Hima />} />
-          <Route path="/companies/sina" element={<Sina />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+        {/* شركات المجموعة */}
+        <Route path="/companies/alzab" element={<Alzab />} />
+        <Route path="/companies/gayath" element={<Gayath />} />
+        <Route path="/companies/hadi_cap" element={<HadiCap />} />
+        <Route path="/companies/hamdi" element={<Hamdi />} />
+        <Route path="/companies/hima" element={<Hima />} />
+        <Route path="/companies/sina" element={<Sina />} />
+
+        {/* Fallback لأي مسار غير معروف */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
   );
 }

@@ -19,7 +19,7 @@ import Our_Products from "../components/home/Our_Products";
 import Latest_News from "../components/home/Latest_News";
 import Why_Choose_Us from "../components/home/Why_Choose_Us";
 import Industries_We_Serve from "../components/home/Industries_We_Serve";
-import Distributor_Network from "../components/home/Distributor_Network";
+//import Distributor_Network from "../components/home/Distributor_Network";
 import FQA from "../components/home/FQA";
 import Contact_Us from "../components/home/Contact_Us";
 

@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 type Company = { name: string; to: string; logo?: string };
 
@@ -20,6 +21,7 @@ export default function Hero({
   companies?: Company[];
   logoGroup?: string;
 }) {
+  const navigate = useNavigate();
   const heroRef = useRef(null);
   const titleRef = useRef(null);
   const descRef = useRef(null);
@@ -100,7 +102,7 @@ export default function Hero({
                 {/* CTA Buttons - Full Width on Mobile */}
                 <div ref={ctaRef} className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full animate-fadeInUp">
                   <button
-                    onClick={() => window.location.href = '/contact'}
+                    onClick={() => navigate('/contact')}
                     className={`group w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-xl md:rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-bold text-white shadow-lg shadow-emerald-600/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-600/40 ${flexDirection}`}
                     aria-label={isAR ? 'تواصل معنا الآن' : 'Contact us now'}
                   >
@@ -111,7 +113,7 @@ export default function Hero({
                   </button>
 
                   <button
-                    onClick={() => window.location.href = '/about'}
+                    onClick={() => navigate('/about')}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-xl md:rounded-2xl border-2 border-gray-300 bg-white px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold text-gray-700 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-600 hover:bg-gray-50 hover:text-emerald-600"
                     aria-label={isAR ? 'اكتشف مجموعتنا' : 'Explore our group'}
                   >
@@ -125,9 +127,9 @@ export default function Hero({
             <div ref={cardsRef} className="w-full">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 {companies.map((company, index) => (
-                  <a
+                  <Link
                     key={company.to}
-                    href={company.to}
+                    to={company.to}
                     className="company-card group relative flex h-48 md:h-56 flex-col overflow-hidden rounded-2xl md:rounded-3xl border border-emerald-100/80 bg-white shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-600/20 animate-fadeInUp"
                     style={{ animationDelay: `${index * 0.1}s` }}
                     aria-label={`${isAR ? 'زيارة' : 'Visit'} ${company.name}`}
@@ -153,7 +155,7 @@ export default function Hero({
                     <div className="flex h-14 md:h-16 items-center justify-center border-t border-gray-100 bg-white px-4 md:px-5">
                       <span className="text-center text-sm md:text-base font-bold text-gray-800 line-clamp-2">{company.name}</span>
                     </div>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -200,7 +202,7 @@ export default function Hero({
                 {/* CTA Buttons */}
                 <div ref={ctaRef} className={`flex flex-wrap gap-4 ${justifyContent} animate-fadeInUp`}>
                   <button
-                    onClick={() => window.location.href = '/contact'}
+                    onClick={() => navigate('/contact')}
                     className={`group inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-8 py-4 text-lg font-bold text-white shadow-lg shadow-emerald-600/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-600/40 ${flexDirection}`}
                     aria-label={isAR ? 'تواصل معنا الآن' : 'Contact us now'}
                   >
@@ -211,7 +213,7 @@ export default function Hero({
                   </button>
 
                   <button
-                    onClick={() => window.location.href = '/about'}
+                    onClick={() => navigate('/about')}
                     className="inline-flex items-center gap-3 rounded-2xl border-2 border-gray-300 bg-white px-8 py-4 text-lg font-semibold text-gray-700 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-600 hover:bg-gray-50 hover:text-emerald-600"
                     aria-label={isAR ? 'اكتشف مجموعتنا' : 'Explore our group'}
                   >
@@ -225,9 +227,9 @@ export default function Hero({
             <div ref={cardsRef} className={isRTL ? 'lg:order-1' : 'lg:order-2'}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {companies.map((company, index) => (
-                  <a
+                  <Link
                     key={company.to}
-                    href={company.to}
+                    to={company.to}
                     className="company-card group relative flex h-56 flex-col overflow-hidden rounded-3xl border border-emerald-100/80 bg-white shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-600/20 animate-fadeInUp"
                     style={{ animationDelay: `${index * 0.1}s` }}
                     aria-label={`${isAR ? 'زيارة' : 'Visit'} ${company.name}`}
@@ -253,7 +255,7 @@ export default function Hero({
                     <div className="flex h-16 items-center justify-center border-t border-gray-100 bg-white px-5">
                       <span className="text-center text-base font-bold text-gray-800">{company.name}</span>
                     </div>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
