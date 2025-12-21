@@ -48,10 +48,10 @@ const HQ = {
   lat: 33.312,
   lng: 44.445,
   address: {
-    ar: "العراق - كركوك - دارمان",
-    en: "Iraq - Kirkuk - Daraman"
+    ar: "العراق - كركوك - حي الصناعي",
+    en: "Iraq - Kirkuk - Industrial District"
   },
-  phones: ["+964 770 000 2221"],
+  phones: ["07709121122"],
   email: "cap@hadigroup.iq",
 };
 

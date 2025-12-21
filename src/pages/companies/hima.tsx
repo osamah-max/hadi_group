@@ -57,7 +57,7 @@ const HQ = {
     ar: "العراق - كركوك - دارمان",
     en: "Iraq - Kirkuk - Daraman"
   },
-  phones: ["+964 770 000 5551"],
+  phones: ["07737203059", "07815000823"],
   email: "hima@hadigroup.iq",
 };
 
