@@ -59,10 +59,11 @@ const HQ = {
   },
   phones: ["07737203059", "07815000823"],
   email: "hima@hadigroup.iq",
+  mapUrl: "https://maps.google.com/maps?q=Daraman,+Kirkuk,+Iraq&output=embed&z=14"
 };
 
-const mapSrc = (lat: number, lng: number) =>
-  `https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed`;
+const mapSrc = (hq: typeof HQ) => 
+  hq.mapUrl || `https://maps.google.com/maps?q=${hq.lat},${hq.lng}&z=14&output=embed`;
 
 // الترجمات
 const translations = {
@@ -1597,7 +1598,7 @@ export default function HimaPlastic() {
                 <div className="rounded-xl overflow-hidden shadow-lg">
                   <iframe
                     title={isAR ? "خريطة شركة هيما" : "Hima Company Map"}
-                    src={mapSrc(HQ.lat, HQ.lng)}
+                    src={mapSrc(HQ)}
                     className="w-full h-64 sm:h-80 lg:h-96"
                     loading="lazy"
                   />

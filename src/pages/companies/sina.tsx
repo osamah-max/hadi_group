@@ -60,10 +60,11 @@ const HQ = {
   },
   phones: ["07709122266", "07709090940"],
   email: "sinai@hadigroup.iq",
+  mapUrl: "https://maps.google.com/maps?q=Industrial+District,+Kirkuk,+Iraq&output=embed&z=14"
 };
 
-const mapSrc = (lat: number, lng: number) =>
-  `https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed`;
+const mapSrc = (hq: typeof HQ) => 
+  hq.mapUrl || `https://maps.google.com/maps?q=${hq.lat},${hq.lng}&z=14&output=embed`;
 
 // الترجمات
 const translations = {
@@ -1096,7 +1097,7 @@ export default function SinaCompany() {
                 <div className="rounded-xl overflow-hidden shadow-lg">
                   <iframe
                     title={isAR ? "خريطة مصنع سيناء" : "Sina Factory Map"}
-                    src={mapSrc(HQ.lat, HQ.lng)}
+                    src={mapSrc(HQ)}
                     className="w-full h-64 sm:h-80 lg:h-96"
                     loading="lazy"
                   />
