@@ -56,7 +56,7 @@ const HQ = {
     ar: "العراق - كركوك - دارمان",
     en: "Iraq - Kirkuk - Daraman"
   },
-  phones: ["+964 770 000 5551"],
+  phones: ["07700005551"],
   email: "hamidi@hadigroup.iq",
   mapUrl: "https://maps.google.com/maps?q=Daraman,+Kirkuk,+Iraq&output=embed&z=14"
 };

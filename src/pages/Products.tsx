@@ -2,7 +2,9 @@
 import { useMemo, useState, memo, useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import useDir from "../hooks/useDir";
-import { allProducts, type FactoryKey, type Product } from "../data/products";
+import { type FactoryKey } from "../data/products";
+import { allCompanyProducts, type CompanyProduct } from "../data/companyProducts";
+import { X, Download, Image as ImageIcon, FileText, Ruler, Package } from "lucide-react";
 
 // Logos
 import logoAlzab from "../assets/img/logo/alzab.png";
@@ -11,12 +13,22 @@ import logoHadiCap from "../assets/img/logo/hadi_cap.png";
 import logoHima from "../assets/img/logo/hima1.png";
 import logoSina from "../assets/img/logo/sina.png";
 import logoHamdi from "../assets/img/logo/hamdi_factory.png";
-import logoGroup from "../assets/img/logo/hadi_group.png";
+
+// Extended product type for modal
+type ExtendedProduct = CompanyProduct & {
+  specs?: Record<string, string>;
+  additionalImages?: string[];
+  contextImage?: string;
+  technicalDrawing?: string;
+  pdfUrl?: string;
+};
 
 export default function Products() {
   const { isRTL, isAR } = useDir();
   const [selectedFactory, setSelectedFactory] = useState<FactoryKey | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<ExtendedProduct | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const t = useMemo(
     () =>
@@ -64,8 +76,8 @@ export default function Products() {
     [isAR]
   );
 
-  // Use products from data file
-  const products = allProducts;
+  // Use products from companyProducts file
+  const products = allCompanyProducts as ExtendedProduct[];
 
   // Factory logos mapping
   const factoryLogos: Record<FactoryKey, string> = {
@@ -126,6 +138,16 @@ export default function Products() {
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedFactory, searchQuery]);
+
+  const handleOpenModal = useCallback((product: ExtendedProduct) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+    setTimeout(() => setSelectedProduct(null), 300);
+  }, []);
 
   return (
     <div
@@ -227,6 +249,7 @@ export default function Products() {
                     isAR={isAR}
                     isRTL={isRTL}
                     t={t}
+                    onOpenModal={handleOpenModal}
                   />
                 ))}
               </div>
@@ -248,13 +271,11 @@ export default function Products() {
                   
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
                     .filter(page => {
-                      // Show first page, last page, current page, and pages around current
                       return page === 1 || 
                              page === totalPages || 
                              (page >= currentPage - 1 && page <= currentPage + 1);
                     })
                     .map((page, idx, arr) => {
-                      // Add ellipsis if there's a gap
                       const showEllipsisBefore = idx > 0 && arr[idx - 1] < page - 1;
                       return (
                         <div key={page} className="flex items-center gap-1">
@@ -324,9 +345,259 @@ export default function Products() {
           </Link>
         </div>
       </section>
+
+      {/* Modal */}
+      {selectedProduct && (
+        <TechnicalDatasheetModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          isRTL={isRTL}
+          isAR={isAR}
+        />
+      )}
     </div>
   );
 }
+
+// Technical Datasheet Modal Component
+const TechnicalDatasheetModal = memo(({ product, isOpen, onClose, isRTL, isAR }: {
+  product: ExtendedProduct;
+  isOpen: boolean;
+  onClose: () => void;
+  isRTL: boolean;
+  isAR: boolean;
+}) => {
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  const allImages = useMemo(() => product.additionalImages || [product.img], [product]);
+  const specs = useMemo(() => {
+    // Create specs from category if no specs exist
+    if (product.specs) return product.specs;
+    const baseSpecs: Record<string, string> = {};
+    if (product.category) {
+      baseSpecs[isAR ? "الفئة" : "Category"] = isAR ? product.category : (product.categoryEn || product.category);
+    }
+    return baseSpecs;
+  }, [product, isAR]);
+
+  const handleImageSelect = useCallback((idx: number) => {
+    setSelectedImageIndex(idx);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      modalRef.current?.focus();
+    } else {
+      document.body.style.overflow = '';
+      setSelectedImageIndex(0);
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const productTitle = isAR ? product.title : product.titleEn;
+  const productDesc = isAR ? product.desc : product.descEn;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-24 pb-4 px-4 bg-black/60 overflow-y-auto"
+      onClick={onClose}
+      style={{ paddingTop: '80px' }}
+    >
+      <div
+        ref={modalRef}
+        className="relative w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col mb-8"
+        style={{ maxHeight: 'calc(100vh - 100px)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-5 sm:p-6 flex items-center justify-between border-b-2 border-emerald-700 flex-shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+              <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-xl sm:text-2xl font-bold truncate">{productTitle}</h2>
+              <p className="text-emerald-100 text-xs sm:text-sm">{isAR ? 'ورقة البيانات التقنية' : 'Technical Datasheet'}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            {product.pdfUrl && (
+              <a
+                href={product.pdfUrl}
+                download
+                className="flex items-center gap-2 bg-white/20 hover:bg-white/30 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 transition-colors duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="font-semibold text-xs sm:text-sm hidden sm:inline">{isAR ? 'تحميل PDF' : 'Download PDF'}</span>
+              </a>
+            )}
+            <button
+              onClick={onClose}
+              className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors duration-200 flex-shrink-0"
+            >
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="grid lg:grid-cols-2 gap-0">
+            {/* Images Section */}
+            <div className="bg-gradient-to-br from-gray-50 to-white p-4 sm:p-6 lg:p-8 border-r border-gray-200">
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 flex-shrink-0" />
+                  <span>{isAR ? 'الصور التفصيلية' : 'Product Images'}</span>
+                </h3>
+                
+                <div className="relative bg-white rounded-xl p-4 sm:p-6 mb-3 sm:mb-4 shadow-md border border-gray-200 min-h-[250px] sm:min-h-[300px] flex items-center justify-center">
+                  <img
+                    src={allImages[selectedImageIndex] || product.img}
+                    alt={productTitle}
+                    className="max-w-full max-h-[220px] sm:max-h-[280px] object-contain"
+                    loading="eager"
+                    decoding="async"
+                  />
+                </div>
+
+                {allImages.length > 1 && (
+                  <div className="grid grid-cols-4 gap-2 sm:gap-3">
+                    {allImages.map((img: string, idx: number) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleImageSelect(idx)}
+                        className={`relative rounded-lg overflow-hidden border-2 transition-colors duration-200 ${
+                          selectedImageIndex === idx
+                            ? 'border-emerald-500 ring-1 ring-emerald-200'
+                            : 'border-gray-200 hover:border-emerald-300'
+                        }`}
+                      >
+                        <img
+                          src={img}
+                          alt={`${productTitle} - View ${idx + 1}`}
+                          className="w-full h-16 sm:h-20 object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {product.contextImage && (
+                <div className="mb-4 sm:mb-6">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 flex-shrink-0" />
+                    <span>{isAR ? 'المنتج على العبوة' : 'Product in Context'}</span>
+                  </h3>
+                  <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200">
+                    <img
+                      src={product.contextImage}
+                      alt={`${productTitle} in context`}
+                      className="w-full h-auto object-contain rounded-lg"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {product.technicalDrawing && (
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                    <Ruler className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 flex-shrink-0" />
+                    <span>{isAR ? 'المخطط الهندسي' : 'Technical Drawing'}</span>
+                  </h3>
+                  <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200">
+                    <img
+                      src={product.technicalDrawing}
+                      alt={`${productTitle} technical drawing`}
+                      className="w-full h-auto object-contain rounded-lg"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <div className="mt-3 sm:mt-4 text-center">
+                      <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+                        {isAR ? 'جميع الأبعاد بالمليمتر (mm)' : 'All dimensions in millimeters (mm)'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Specifications Section */}
+            <div className="bg-white p-4 sm:p-6 lg:p-8">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 sm:mb-6 flex items-center gap-2">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 flex-shrink-0" />
+                <span>{isAR ? 'المواصفات التقنية' : 'Technical Specifications'}</span>
+              </h3>
+
+              {Object.keys(specs).length > 0 ? (
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-emerald-50 to-teal-50">
+                        <th className={`border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-bold text-gray-900 text-xs sm:text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                          {isAR ? 'الخاصية' : 'Property'}
+                        </th>
+                        <th className={`border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-bold text-gray-900 text-xs sm:text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                          {isAR ? 'القيمة' : 'Value'}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(specs).map(([key, value]) => (
+                        <tr key={key} className="hover:bg-emerald-50/30">
+                          <td className={`border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-semibold text-gray-700 text-xs sm:text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                            {key}
+                          </td>
+                          <td className={`border border-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-gray-900 font-medium text-xs sm:text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+                            {value}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  {isAR ? 'لا توجد مواصفات متاحة' : 'No specifications available'}
+                </div>
+              )}
+
+              <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-100">
+                <h4 className="font-bold text-gray-900 mb-2 text-xs sm:text-sm">{isAR ? 'الوصف' : 'Description'}</h4>
+                <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">{productDesc}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+TechnicalDatasheetModal.displayName = 'TechnicalDatasheetModal';
 
 // Optimized Product Card Component with IntersectionObserver
 const ProductCard = memo(({ 
@@ -336,18 +607,20 @@ const ProductCard = memo(({
   factoryRoute, 
   isAR, 
   isRTL, 
-  t 
+  t,
+  onOpenModal
 }: {
-  product: Product;
+  product: ExtendedProduct;
   index: number;
   factoryLogo: string;
   factoryRoute: string;
   isAR: boolean;
   isRTL: boolean;
   t: any;
+  onOpenModal: (product: ExtendedProduct) => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isInView, setIsInView] = useState(index < 4); // Load first 4 images immediately
+  const [isInView, setIsInView] = useState(index < 4);
   const [imageLoaded, setImageLoaded] = useState(false);
   const shouldLoadEagerly = index < 4;
 
@@ -395,7 +668,8 @@ const ProductCard = memo(({
   return (
     <div
       ref={containerRef}
-      className="group relative overflow-hidden rounded-3xl border-2 border-gray-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-2 hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-600/10"
+      className="group relative overflow-hidden rounded-3xl border-2 border-gray-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-2 hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-600/10 cursor-pointer"
+      onClick={() => onOpenModal(product)}
     >
       {/* Product Image */}
       <div className="relative h-64 overflow-hidden bg-gradient-to-br from-gray-50 to-white">
@@ -426,9 +700,11 @@ const ProductCard = memo(({
           />
         </div>
         {/* Category Badge */}
-        <div className="absolute top-4 left-4 rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white shadow-lg z-20">
-          {category}
-        </div>
+        {category && (
+          <div className="absolute top-4 left-4 rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white shadow-lg z-20">
+            {category}
+          </div>
+        )}
       </div>
 
       {/* Product Info */}
@@ -440,13 +716,16 @@ const ProductCard = memo(({
           {productDesc}
         </p>
         <div className="flex items-center justify-between gap-4">
-          <Link
-            to={factoryRoute}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenModal(product);
+            }}
             className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-emerald-700 hover:shadow-lg"
           >
-            <span>{t.viewDetails}</span>
-            <span className={`text-lg ${isRTL ? "rotate-180" : ""}`}>→</span>
-          </Link>
+            <FileText className="h-4 w-4" />
+            <span>{isAR ? 'عرض التفاصيل' : 'View Details'}</span>
+          </button>
           <span className="text-xs text-gray-500">
             {t.factories[product.factory]}
           </span>
@@ -457,4 +736,3 @@ const ProductCard = memo(({
 });
 
 ProductCard.displayName = 'ProductCard';
-

@@ -68,7 +68,7 @@ export default function ContactUs({ isRTL, isAR, t }: ContactUsProps) {
         hoursTitle: t.hoursTitle || (isAR ? "ساعات العمل" : "Working Hours"),
         // Mock data for content
         addr: t.addr || (isAR ? "العراق - كركوك - دارمان" : "Iraq - Kirkuk - Daraman"),
-        phone: t.phone || "+964 1 234 5678, +964 770 123 4567",
+        phone: t.phone || "07700005551, 07737203059, 07709121122",
         mail: t.mail || "info@hadigroup.iq, sales@hadigroup.iq",
         workingHours: t.workingHours || (isAR ? "الأحد - الخميس: 8:00 - 16:00 | الجمعة - السبت: مغلق" : "Sun–Thu: 8:00–16:00 | Fri–Sat: Closed"),
     }), [t, isAR]);

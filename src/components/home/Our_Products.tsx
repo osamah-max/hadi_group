@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef, memo, useCallback } from "react";
-import { allProducts, type FactoryKey, type Product } from "../../data/products";
+import { type FactoryKey } from "../../data/products";
+import { allCompanyProducts, type CompanyProduct } from "../../data/companyProducts";
 
 type FactoryKeyWithAll = FactoryKey | "all";
 
@@ -42,14 +43,9 @@ export default function OurProducts({
 
   // Filter products from all factories
   const filtered = useMemo(() => {
-    let pool = allProducts;
+    let pool = allCompanyProducts;
     
-    // Filter by factory
-    if (active !== "all") {
-      pool = pool.filter((p) => p.factory === active);
-    }
-    
-    // Filter by search query
+    // Filter by search query first (if any)
     if (q.trim()) {
       const query = q.trim().toLowerCase();
       pool = pool.filter((p) => {
@@ -59,8 +55,36 @@ export default function OurProducts({
       });
     }
     
-    // Limit to 12 products for homepage
-    return pool.slice(0, 12);
+    // Filter by factory
+    if (active !== "all") {
+      // Show all products from selected factory
+      pool = pool.filter((p) => p.factory === active);
+    } else {
+      // When "all" is selected: show 1-2 products from each factory
+      const factoryGroups: Record<FactoryKey, CompanyProduct[]> = {
+        gayath: [],
+        hamdi: [],
+        sina: [],
+        alzab: [],
+        hima: [],
+        hadiCap: [],
+      };
+      
+      // Group products by factory
+      pool.forEach((product) => {
+        if (factoryGroups[product.factory]) {
+          factoryGroups[product.factory].push(product);
+        }
+      });
+      
+      // Take 1-2 products from each factory
+      pool = Object.values(factoryGroups).flatMap((factoryProducts) => {
+        // Take 2 products if available, otherwise 1
+        return factoryProducts.slice(0, Math.min(2, factoryProducts.length));
+      });
+    }
+    
+    return pool;
   }, [active, q, isAR]);
 
   // Factory information
@@ -253,7 +277,7 @@ const ProductCard = memo(({
   isRTL, 
   align 
 }: {
-  product: Product;
+  product: CompanyProduct;
   index: number;
   factoryInfo: { name: string; logo: string };
   factoryRoute: string;
