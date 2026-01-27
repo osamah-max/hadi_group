@@ -3,8 +3,8 @@ import { useMemo, useState, memo, useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import useDir from "../hooks/useDir";
 import { type FactoryKey } from "../data/products";
-import { allCompanyProducts, type CompanyProduct } from "../data/companyProducts";
 import { X, Download, Image as ImageIcon, FileText, Ruler, Package } from "lucide-react";
+import api, { getProductImageUrl } from "../lib/api";
 
 // Logos
 import logoAlzab from "../assets/img/logo/alzab.png";
@@ -29,6 +29,8 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<ExtendedProduct | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [products, setProducts] = useState<ExtendedProduct[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const t = useMemo(
     () =>
@@ -76,8 +78,36 @@ export default function Products() {
     [isAR]
   );
 
-  // Use products from companyProducts file
-  const products = allCompanyProducts as ExtendedProduct[];
+  // Fetch products from API
+  useEffect(() => {
+    const langQ = isAR ? 'ar' : 'en';
+    api.get(`/api/products?lang=${langQ}`)
+      .then((response) => {
+        const apiProducts = response.data.products || [];
+        const mappedProducts: ExtendedProduct[] = apiProducts.map((p: any) => ({
+          id: p.id,
+          factory: p.factory_slug as FactoryKey,
+          title: p.title_ar,
+          titleEn: p.title_en,
+          desc: p.desc_ar || '',
+          descEn: p.desc_en || '',
+          img: p.img,
+          specs: p.specs || {},
+          additionalImages: p.additional_images || [],
+          contextImage: p.context_image,
+          technicalDrawing: p.technical_drawing,
+          pdfUrl: p.pdf_url,
+        }));
+        setProducts(mappedProducts);
+      })
+      .catch((error) => {
+        console.error('Error fetching products:', error);
+        setProducts([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [isAR]);
 
   // Factory logos mapping
   const factoryLogos: Record<FactoryKey, string> = {
@@ -236,7 +266,11 @@ export default function Products() {
       {/* Products Grid */}
       <section className="container mx-auto px-4 mb-12">
         <div className="max-w-7xl mx-auto">
-          {filteredProducts.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-lg text-gray-600">{isAR ? 'جاري التحميل...' : 'Loading...'}</div>
+            </div>
+          ) : filteredProducts.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {paginatedProducts.map((product, index) => (
@@ -470,7 +504,7 @@ const TechnicalDatasheetModal = memo(({ product, isOpen, onClose, isRTL, isAR }:
                 
                 <div className="relative bg-white rounded-xl p-4 sm:p-6 mb-3 sm:mb-4 shadow-md border border-gray-200 min-h-[250px] sm:min-h-[300px] flex items-center justify-center">
                   <img
-                    src={allImages[selectedImageIndex] || product.img}
+                    src={getProductImageUrl(allImages[selectedImageIndex] || product.img)}
                     alt={productTitle}
                     className="max-w-full max-h-[220px] sm:max-h-[280px] object-contain"
                     loading="eager"
@@ -491,7 +525,7 @@ const TechnicalDatasheetModal = memo(({ product, isOpen, onClose, isRTL, isAR }:
                         }`}
                       >
                         <img
-                          src={img}
+                          src={getProductImageUrl(img)}
                           alt={`${productTitle} - View ${idx + 1}`}
                           className="w-full h-16 sm:h-20 object-cover"
                           loading="lazy"
@@ -511,7 +545,7 @@ const TechnicalDatasheetModal = memo(({ product, isOpen, onClose, isRTL, isAR }:
                   </h3>
                   <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200">
                     <img
-                      src={product.contextImage}
+                      src={getProductImageUrl(product.contextImage)}
                       alt={`${productTitle} in context`}
                       className="w-full h-auto object-contain rounded-lg"
                       loading="lazy"
@@ -529,7 +563,7 @@ const TechnicalDatasheetModal = memo(({ product, isOpen, onClose, isRTL, isAR }:
                   </h3>
                   <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200">
                     <img
-                      src={product.technicalDrawing}
+                      src={getProductImageUrl(product.technicalDrawing)}
                       alt={`${productTitle} technical drawing`}
                       className="w-full h-auto object-contain rounded-lg"
                       loading="lazy"
@@ -678,7 +712,7 @@ const ProductCard = memo(({
         )}
         {isInView ? (
           <img
-            src={product.img}
+            src={getProductImageUrl(product.img)}
             alt={productName}
             className={`h-full w-full object-contain p-6 transition-all duration-300 group-hover:scale-110 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
             loading={shouldLoadEagerly ? "eager" : "lazy"}

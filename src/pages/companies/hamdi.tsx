@@ -37,6 +37,9 @@ import {
   FileText,
 } from "lucide-react";
 import useDir from "../../hooks/useDir";
+import api, { getProductImageUrl } from "../../lib/api";
+
+const FACTORY_SLUG = "hamdi";
 
 // مسارات الصور
 import hamdiLogo from "../../assets/img/logo/hamdi_factory.png";
@@ -513,7 +516,7 @@ const TechnicalDatasheetModal = memo(({ product, isOpen, onClose, isRTL }: any) 
                 {/* Main Image */}
                 <div className="relative bg-white rounded-xl p-4 sm:p-6 mb-3 sm:mb-4 shadow-md border border-gray-200 min-h-[250px] sm:min-h-[300px] flex items-center justify-center">
                   <img
-                    src={allImages[selectedImageIndex] || product.img}
+                    src={getProductImageUrl(allImages[selectedImageIndex] || product.img)}
                     alt={product.title}
                     className="max-w-full max-h-[220px] sm:max-h-[280px] object-contain"
                     loading="eager"
@@ -535,7 +538,7 @@ const TechnicalDatasheetModal = memo(({ product, isOpen, onClose, isRTL }: any) 
                         }`}
                       >
                         <img
-                          src={img}
+                          src={getProductImageUrl(img)}
                           alt={`${product.title} - View ${idx + 1}`}
                           className="w-full h-16 sm:h-20 object-cover"
                           loading="lazy"
@@ -556,7 +559,7 @@ const TechnicalDatasheetModal = memo(({ product, isOpen, onClose, isRTL }: any) 
                   </h3>
                   <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200">
                     <img
-                      src={product.contextImage}
+                      src={getProductImageUrl(product.contextImage)}
                       alt={`${product.title} in context`}
                       className="w-full h-auto object-contain rounded-lg"
                       loading="lazy"
@@ -575,7 +578,7 @@ const TechnicalDatasheetModal = memo(({ product, isOpen, onClose, isRTL }: any) 
                   </h3>
                   <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200">
                     <img
-                      src={product.technicalDrawing}
+                      src={getProductImageUrl(product.technicalDrawing)}
                       alt={`${product.title} technical drawing`}
                       className="w-full h-auto object-contain rounded-lg"
                       loading="lazy"
@@ -820,7 +823,7 @@ const ProductCard = memo(({ product, index, isRTL, onOpenModal }: any) => {
           )}
           {isInView ? (
             <img
-              src={product.img}
+              src={getProductImageUrl(product.img)}
               alt={product.title}
               className={`relative z-10 w-full h-full max-h-[180px] sm:max-h-[200px] lg:max-h-[220px] object-contain transition-opacity duration-200 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               loading={shouldLoadEagerly ? "eager" : "lazy"}
@@ -868,12 +871,12 @@ const ProductCard = memo(({ product, index, isRTL, onOpenModal }: any) => {
 
 ProductCard.displayName = 'ProductCard';
 
-function ProductsSection({ lang, t, isRTL }: any) {
+function ProductsSection({ lang, t, isRTL, products: productsOverride }: any) {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const itemsPerPage = 6; // 6 products per page for better layout
-  const allProducts = t.products || [];
+  const allProducts = productsOverride ?? [];
 
   const { displayedProducts, totalPages, indexOfFirstItem, indexOfLastItem } = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -991,6 +994,51 @@ export default function HamdiCompany() {
   const { isRTL, isAR } = useDir();
   const lang = isAR ? 'ar' : 'en';
   const t = translations[lang];
+  const [apiFactory, setApiFactory] = useState<any>(null);
+  const [apiProducts, setApiProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const langQ = isAR ? 'ar' : 'en';
+    Promise.all([
+      api.get(`/api/factories/${FACTORY_SLUG}?lang=${langQ}`).then((r) => r.data.factory),
+      api.get(`/api/products?factory_slug=${FACTORY_SLUG}&lang=${langQ}`).then((r) => r.data.products || []),
+    ])
+      .then(([factory, products]) => {
+        setApiFactory(factory ?? null);
+        setApiProducts(Array.isArray(products) ? products : []);
+      })
+      .catch(() => {});
+  }, [isAR]);
+
+  const primaryLoc = apiFactory?.locations?.find((l: any) => l.is_primary) ?? apiFactory?.locations?.[0];
+  const hq = apiFactory
+    ? {
+        address: {
+          ar: primaryLoc?.address_ar ?? apiFactory.address_ar ?? '',
+          en: primaryLoc?.address_en ?? apiFactory.address_en ?? '',
+        },
+        phones: primaryLoc?.phones ?? apiFactory.phones ?? [],
+        email: primaryLoc?.email ?? apiFactory.email ?? '',
+        mapUrl: primaryLoc?.map_url ?? apiFactory.map_url ?? '',
+        lat: primaryLoc?.lat ?? apiFactory.lat ?? 0,
+        lng: primaryLoc?.lng ?? apiFactory.lng ?? 0,
+      }
+    : HQ;
+
+  const productsForShow = apiProducts.map((p: any) => ({
+    title: lang === 'ar' ? p.title_ar : p.title_en,
+    titleEn: p.title_en,
+    titleAr: p.title_ar,
+    img: p.img,
+    desc: lang === 'ar' ? p.desc_ar : p.desc_en,
+    descEn: p.desc_en,
+    descAr: p.desc_ar,
+    specs: p.specs || {},
+    additionalImages: p.additional_images || [p.img].filter(Boolean),
+    contextImage: p.context_image,
+    technicalDrawing: p.technical_drawing,
+    pdfUrl: p.pdf_url,
+  }));
 
   // CSS animations are handled via classes
 
@@ -1150,7 +1198,7 @@ export default function HamdiCompany() {
       </section>
 
       {/* Products */}
-      <ProductsSection lang={lang} t={t} isRTL={isRTL} />
+      <ProductsSection lang={lang} t={t} isRTL={isRTL} products={productsForShow} />
 
       {/* Advantages */}
       <section className="relative h-screen flex items-center justify-center bg-white overflow-hidden">
@@ -1238,7 +1286,7 @@ export default function HamdiCompany() {
                     </div>
                     <div>
                       <div className="font-bold text-gray-900 mb-1 text-sm sm:text-base">{t.address}</div>
-                      <div className="text-gray-600 text-sm sm:text-base">{HQ.address[lang]}</div>
+                      <div className="text-gray-600 text-sm sm:text-base">{hq.address[lang]}</div>
                     </div>
                   </div>
 
@@ -1248,7 +1296,7 @@ export default function HamdiCompany() {
                     </div>
                     <div>
                       <div className="font-bold text-gray-900 mb-1 text-sm sm:text-base">{t.phone}</div>
-                      {HQ.phones.map((p) => (
+                      {hq.phones.map((p: string) => (
                         <a key={p} href={`tel:${p.replace(/\s+/g, "")}`} className="text-emerald-600 hover:underline block text-sm sm:text-base">
                           {p}
                         </a>
@@ -1262,8 +1310,8 @@ export default function HamdiCompany() {
                     </div>
                     <div>
                       <div className="font-bold text-gray-900 mb-1 text-sm sm:text-base">{t.email}</div>
-                      <a href={`mailto:${HQ.email}`} className="text-emerald-600 hover:underline text-sm sm:text-base break-all">
-                        {HQ.email}
+                      <a href={`mailto:${hq.email}`} className="text-emerald-600 hover:underline text-sm sm:text-base break-all">
+                        {hq.email}
                       </a>
                     </div>
                   </div>
@@ -1272,7 +1320,7 @@ export default function HamdiCompany() {
                 <div className="rounded-xl overflow-hidden shadow-lg">
                   <iframe
                     title={isAR ? "خريطة معمل حمدي" : "Hamdi Factory Map"}
-                    src={mapSrc(HQ)}
+                    src={mapSrc(hq)}
                     className="w-full h-64 sm:h-80 lg:h-96"
                     loading="lazy"
                   />

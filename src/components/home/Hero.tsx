@@ -45,11 +45,6 @@ export default function Hero({
     // Get the canonical route from our single source of truth
     const canonicalRoute = getCompanyRoute(slug);
     
-    // Debug logging (temporary)
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Hero] Company: ${company.name}, Original: ${company.to}, Slug: ${slug}, Normalized: ${canonicalRoute}`);
-    }
-    
     return {
       ...company,
       to: canonicalRoute, // Use canonical route

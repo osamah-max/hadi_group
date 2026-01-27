@@ -1,5 +1,5 @@
 // src/pages/Contact.tsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Phone,
   Mail,
@@ -13,8 +13,9 @@ import {
   Tractor,
 } from "lucide-react";
 import useDir from "../hooks/useDir";
+import api from "../lib/api";
 
-// ----- بيانات المصانع (من صفحات الشركات) -----
+// ----- بيانات المصانع (fallback عندما لا يتوفر API) -----
 type Plant = {
   key: string;
   name: string;        // عربي
@@ -31,7 +32,16 @@ type Plant = {
   route: string;
 };
 
-const plants: Plant[] = [
+const slugToIcon: Record<string, { icon: React.ElementType; color: string }> = {
+  gayath: { icon: Factory, color: "from-emerald-500 to-teal-600" },
+  hamdi: { icon: Building2, color: "from-orange-500 to-amber-600" },
+  sina: { icon: Tractor, color: "from-green-500 to-lime-600" },
+  alzab: { icon: Droplet, color: "from-cyan-500 to-sky-600" },
+  hima: { icon: Layers, color: "from-purple-500 to-violet-600" },
+  hadi_cap: { icon: Package, color: "from-blue-500 to-indigo-600" },
+};
+
+const plantsFallback: Plant[] = [
   {
     key: "gayath",
     name: "مصنع غياث",
@@ -253,6 +263,40 @@ function PlantCard({ plant, isRTL, isAR }: { plant: Plant; isRTL: boolean; isAR:
 // ------------------ الصفحة الرئيسية ------------------
 export default function Contact() {
   const { isRTL, isAR } = useDir();
+  const [settings, setSettings] = useState<Record<string, string | string[]> | null>(null);
+  const [apiPlants, setApiPlants] = useState<Plant[] | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      api.get<{ settings: Record<string, string | string[]> }>("/api/settings").then((r) => r.data.settings).catch(() => null),
+      api.get<{ factories: any[] }>("/api/factories").then((r) => r.data.factories || []).catch(() => []),
+    ]).then(([s, factories]) => {
+      if (s) setSettings(s);
+      if (Array.isArray(factories) && factories.length > 0) {
+        const list: Plant[] = factories.map((f: any) => {
+          const loc = f.locations?.find((l: any) => l.is_primary) ?? f.locations?.[0];
+          const addrAr = loc?.address_ar ?? f.address_ar ?? "";
+          const addrEn = loc?.address_en ?? f.address_en ?? "";
+          const meta = slugToIcon[f.slug] ?? { icon: Factory, color: "from-emerald-500 to-teal-600" };
+          const route = f.slug === "hadi_cap" ? "/companies/hadi_cap" : `/companies/${f.slug}`;
+          const key = f.slug === "hadi_cap" ? "hadiCap" : f.slug;
+          return {
+            key,
+            name: f.name_ar ?? "",
+            nameEn: f.name_en ?? "",
+            address: { ar: addrAr, en: addrEn },
+            phones: Array.isArray(loc?.phones) ? loc.phones : (Array.isArray(f.phones) ? f.phones : []),
+            email: loc?.email ?? f.email ?? "",
+            mapUrl: loc?.map_url ?? f.map_url ?? "https://maps.google.com/maps?q=Daraman,+Kirkuk,+Iraq&output=embed&z=14",
+            icon: meta.icon,
+            color: meta.color,
+            route,
+          };
+        });
+        setApiPlants(list);
+      }
+    });
+  }, []);
 
   const t = useMemo(
     () =>
@@ -300,8 +344,14 @@ export default function Contact() {
     [isAR]
   );
 
+  const hqAddress = (settings && (isAR ? settings.site_general_address_ar : settings.site_general_address_en)) ? String(settings.site_general_address_ar ?? settings.site_general_address_en ?? "") : t.hqAddress;
+  const hqPhones = (settings?.site_general_phones && Array.isArray(settings.site_general_phones) && settings.site_general_phones.length > 0) ? (settings.site_general_phones as string[]) : t.hqPhones;
+  const hqEmails = (settings?.site_general_email && String(settings.site_general_email)) ? [String(settings.site_general_email)] : t.hqEmails;
+  const workingHoursContent = (settings && (isAR ? settings.site_working_hours_ar : settings.site_working_hours_en) && String(settings.site_working_hours_ar ?? settings.site_working_hours_en ?? "").trim()) ? String(settings.site_working_hours_ar ?? settings.site_working_hours_en ?? "") : t.workingHours;
+
   const hqMapUrl = "https://maps.google.com/maps?q=Daraman,+Kirkuk,+Iraq&output=embed&z=14";
   const hqMapLink = "https://maps.google.com/maps?q=Daraman,+Kirkuk,+Iraq";
+  const plantsToShow = apiPlants ?? plantsFallback;
 
   return (
     <div
@@ -331,7 +381,7 @@ export default function Contact() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             <InfoRow Icon={MapPin} title={t.address} isRTL={isRTL}>
               <div className="space-y-1">
-                {t.hqAddress.split(" - ").map((part, idx) => (
+                {(typeof hqAddress === "string" ? hqAddress : "").split(" - ").filter(Boolean).map((part, idx) => (
                   <div key={idx}>{part}</div>
                 ))}
               </div>
@@ -339,7 +389,7 @@ export default function Contact() {
 
             <InfoRow Icon={Phone} title={t.phone} isRTL={isRTL}>
               <div className="space-y-2">
-                {t.hqPhones.map((p) => (
+                {hqPhones.map((p) => (
                   <a
                     key={p}
                     href={`tel:${p.replace(/\s+/g, "")}`}
@@ -353,7 +403,7 @@ export default function Contact() {
 
             <InfoRow Icon={Mail} title={t.email} isRTL={isRTL}>
               <div className="space-y-2">
-                {t.hqEmails.map((m) => (
+                {hqEmails.map((m) => (
                   <a
                     key={m}
                     href={`mailto:${m}`}
@@ -366,7 +416,7 @@ export default function Contact() {
             </InfoRow>
 
             <InfoRow Icon={Clock} title={t.hours} isRTL={isRTL}>
-              <div>{t.workingHours}</div>
+              <div>{workingHoursContent}</div>
             </InfoRow>
           </div>
 
@@ -414,7 +464,7 @@ export default function Contact() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {plants.map((plant) => (
+            {plantsToShow.map((plant) => (
               <PlantCard key={plant.key} plant={plant} isRTL={isRTL} isAR={isAR} />
             ))}
           </div>

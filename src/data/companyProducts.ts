@@ -12,6 +12,7 @@ import rabit from "../assets/img/products/product/hima_plastic/rabit.png";
 import taqsim from "../assets/img/products/product/hima_plastic/taqsim.png";
 import taqsim2 from "../assets/img/products/product/hima_plastic/taqsim2.png";
 import tawsil from "../assets/img/products/product/hima_plastic/tawsil.png";
+import sadada from "../assets/img/products/product/hima_plastic/sadada.png";
 
 import gyath1 from "../assets/img/products/product/gyath/gyath@3x.png";
 import gyath2 from "../assets/img/products/product/gyath/gyath2@3x.png";
@@ -76,7 +77,7 @@ const himaProducts: CompanyProduct[] = [
     ...extractTitleParts("سدادة / Plug"),
     desc: "سدادة محكمة لسد فتحات الأنابيب بفعالية. يوجد ذكر ونثية.",
     descEn: "Plug for effectively sealing pipe openings. Available in male and female.",
-    img: tawsil,
+    img: sadada,
     factory: "hima",
     category: "ري",
     categoryEn: "Irrigation",
